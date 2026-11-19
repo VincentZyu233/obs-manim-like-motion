@@ -3,9 +3,15 @@
 # 着色器语言识别
 *.effect linguist-language=HLSL
 
-# 排除构建脚手架与自动化脚本，聚焦 C++ 与 HLSL 核心源码
+# 彻底排除 CMake 构建脚本与脚手架，避免污染语言统计
+CMakeLists.txt linguist-vendored
+CMakeLists.txt -linguist-detectable
+*.cmake linguist-vendored
+*.cmake -linguist-detectable
 cmake/** linguist-vendored
+cmake/** -linguist-detectable
 CMakePresets.json linguist-vendored
 buildspec.json linguist-vendored
 .github/** linguist-vendored
+.github/** -linguist-detectable
 docs/** linguist-documentation
