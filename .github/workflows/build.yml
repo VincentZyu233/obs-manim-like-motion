@@ -9,9 +9,62 @@ on:
       - '*'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  check:
+    name: Check Trigger Conditions 🔎
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.flags.outputs.should_build }}
+      should_release: ${{ steps.flags.outputs.should_release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse Trigger Flags
+        id: flags
+        run: |
+          MSG="$(git log -1 --format=%B)"
+          EVENT="${{ github.event_name }}"
+          REF="${{ github.ref }}"
+
+          BUILD=false
+          RELEASE=false
+
+          # 1. 手动触发
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            BUILD=true
+          fi
+
+          # 2. Tag 触发
+          if [[ "$REF" == refs/tags/* ]]; then
+            BUILD=true
+            RELEASE=true
+          fi
+
+          # 3. Commit Message 匹配触发词 [build], [build-action], [build-release], [release]
+          has_trigger() {
+            printf '%s\n' "$MSG" | grep -qiE "(^|[^[:alnum:]_-])\\[$1\\]([^[:alnum:]_-]|$)"
+          }
+
+          if has_trigger "build-release" || has_trigger "release"; then
+            BUILD=true
+            RELEASE=true
+          elif has_trigger "build" || has_trigger "build-action" || has_trigger "build-artifact"; then
+            BUILD=true
+          fi
+
+          echo "should_build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "should_release=$RELEASE" >> "$GITHUB_OUTPUT"
+          echo "🚀 Trigger Decision: should_build=$BUILD, should_release=$RELEASE"
+
   windows-build:
     name: Build Windows x64 🪟
+    needs: check
+    if: needs.check.outputs.should_build == 'true'
     runs-on: windows-2022
     defaults:
       run:
@@ -55,6 +108,8 @@ jobs:
 
   ubuntu-build:
     name: Build Ubuntu Linux x64 🐧
+    needs: check
+    if: needs.check.outputs.should_build == 'true'
     runs-on: ubuntu-24.04
     defaults:
       run:
