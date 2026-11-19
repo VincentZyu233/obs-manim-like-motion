@@ -270,10 +270,10 @@ struct obs_source_info manim_transition = {
     .get_name = manim_get_name,
     .create = manim_create,
     .destroy = manim_destroy,
+    .get_defaults = manim_defaults,
+    .get_properties = manim_properties,
     .update = manim_update,
     .video_render = manim_video_render,
     .audio_render = manim_audio_render,
-    .get_properties = manim_properties,
-    .get_defaults = manim_defaults,
     .video_get_color_space = manim_video_get_color_space,
 };
