@@ -22,10 +22,17 @@
   - `Create`（`DrawBorderThenFill` 勾勒后填充）：高亮霓虹光束沿矩形周长顺时针精准画框，随后画面纹理如墨水般展开注入。
 - **高度自由的视觉与节奏调节**：
   - 支持调节出场/入场占比（Timing Split）、顿歇停顿微空隙（Pause Gap）。
-  - 支持自定义边框颜色（默认经典 Manim 黄 `#FFFF00`）、线条粗细以及发光强度倍率（Glow Multiplier）。
+  - 支持自定义高光颜色（默认水色雾蓝 `#7FA8E8`，参考 OBS Stage 水彩主题）、线条粗细以及发光强度倍率（Glow Multiplier）。
 - **零本地环境负担**：
   - 核心逻辑基于 C++20 与 `libobs` 架构，渲染层全由 GPU 像素着色器（HLSL `.effect`）实时处理。
   - 依托 GitHub Actions 自动化 CI，覆盖 **Windows x64** 与 **Ubuntu Linux x64** 的云端编译与打包。
+
+---
+
+## 🛠️ 自动化构建与 CI/CD
+
+本项目通过 GitHub Actions 实现了全自动跨平台构建与发布流水线，采用与 `winload` 一致的提交关键字门禁机制，避免日常提交消耗计算资源。详细触发指南请参阅：
+* 📖 [构建与发布工作流说明 (.github/workflows/build.md)](.github/workflows/build.md)
 
 ---
 

@@ -20,10 +20,17 @@ Bringing the mathematical elegance, dynamic rate functions, and geometric constr
   - `FadeIn`: Kinetic deceleration landing based on Manim's `rush_from` with smooth settling dynamics.
   - `Create` (`DrawBorderThenFill`): High-intensity neon outline drawn clockwise along the canvas perimeter, followed by a radial fill wave unveiling the incoming scene.
 - **Customizable Timing & Aesthetics**:
-  - Adjust Exit/Entrance ratio, pause gap, border color (default Manim Yellow), border thickness, and glow intensity.
+  - Adjust Exit/Entrance ratio, pause gap, stroke color (default Mizuiro mist blue `#7FA8E8`, inspired by OBS Stage watercolor aesthetics), thickness, and glow multiplier.
 - **Zero Local Overhead**:
   - Pure GPU rendering via HLSL shaders (`.effect`).
   - Automated cloud builds for **Windows x64** and **Linux x64** via GitHub Actions CI.
+
+---
+
+## 🛠️ Automated CI/CD & Build Workflow
+
+Cross-platform builds and releases are automated via GitHub Actions, featuring a `winload`-style commit keyword gating mechanism to prevent daily commits from consuming compute resources. For detailed trigger guides, please refer to:
+* 📖 [Build & Release Workflow (.github/workflows/build.en-us.md)](.github/workflows/build.en-us.md)
 
 ---
 

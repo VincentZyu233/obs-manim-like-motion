@@ -150,3 +150,53 @@ jobs:
           path: |
             release/*.*
             build_x86_64/rundir/RelWithDebInfo/${{ steps.setup.outputs.pluginName }}.so
+
+  release:
+    name: Create GitHub Release 🚀
+    needs: [check, windows-build, ubuntu-build]
+    if: needs.check.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Built Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare Release Assets
+        id: prep
+        run: |
+          product_name="$(jq -r .name buildspec.json)"
+          product_version="$(jq -r .version buildspec.json)"
+          TAG="${GITHUB_REF#refs/tags/}"
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+            TAG="v${product_version}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "title=${product_name} ${TAG}" >> "$GITHUB_OUTPUT"
+
+          mkdir -p release_dist
+          find artifacts -type f \( -name "*.zip" -o -name "*.deb" -o -name "*.tar.gz" \) -exec cp {} release_dist/ \;
+          ls -la release_dist/
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.prep.outputs.tag }}"
+          TITLE="${{ steps.prep.outputs.title }}"
+          shopt -s nullglob
+          FILES=(release_dist/*)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "No package archives found, skipping release upload."
+            exit 0
+          fi
+          gh release create "$TAG" \
+            --title "$TITLE" \
+            --generate-notes \
+            "${FILES[@]}" || gh release upload "$TAG" "${FILES[@]}" --clobber
+
