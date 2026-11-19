@@ -72,11 +72,9 @@ function Package {
     Copy-Item -Path "${ProjectRoot}/release/${Configuration}/${ProductName}/bin" -Destination "${ProjectRoot}/release/Package/obs-plugins" -Recurse
     Copy-Item -Path "${ProjectRoot}/release/${Configuration}/${ProductName}/data" -Destination "${ProjectRoot}/release/Package/data/obs-plugins/${ProductName}" -Recurse
 
-    if ( ( Test-Path -Path $IsccFile ) -and (Get-Command iscc -ErrorAction SilentlyContinue) ) {
+    if ( ( Test-Path -Path $IsccFile ) -and ( Test-Path -Path "${ProjectRoot}/media/icon.ico" ) -and (Get-Command iscc -ErrorAction SilentlyContinue) ) {
         Copy-Item "${IsccFile}" -Destination "${ProjectRoot}/release"
-        if ( Test-Path -Path "${ProjectRoot}/media/icon.ico" ) {
-            Copy-Item "${ProjectRoot}/media/icon.ico" -Destination "${ProjectRoot}/release"
-        }
+        Copy-Item "${ProjectRoot}/media/icon.ico" -Destination "${ProjectRoot}/release"
 
         Log-Information 'Creating InnoSetup installer...'
         Push-Location -Stack BuildTemp
