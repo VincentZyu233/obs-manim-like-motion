@@ -5,7 +5,8 @@ release/
 *.suo
 .vs/
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 *.generated.iss
 version.h
 rundir/
