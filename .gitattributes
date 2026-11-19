@@ -21,3 +21,17 @@ buildspec.json linguist-vendored
 .github/** linguist-vendored
 .github/** -linguist-detectable
 docs/** linguist-documentation
+
+# Markdown 语言统计：默认排除所有文档
+*.md -linguist-detectable
+*.md linguist-documentation
+
+# 精确指定：仅将指定的两个核心 Markdown 文件纳入语言统计
+README.md linguist-language=Markdown
+README.md linguist-detectable
+README.md -linguist-documentation
+
+.github/workflows/build.md linguist-language=Markdown
+.github/workflows/build.md linguist-detectable
+.github/workflows/build.md -linguist-documentation
+.github/workflows/build.md -linguist-vendored
