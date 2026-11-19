@@ -3,6 +3,12 @@
 # 着色器语言识别
 *.effect linguist-language=HLSL
 
+# 语言包统计（强制将 INI 纳入统计）
+*.ini linguist-language=INI
+*.ini linguist-detectable
+data/locale/** linguist-language=INI
+data/locale/** linguist-detectable
+
 # 彻底排除 CMake 构建脚本与脚手架，避免污染语言统计
 CMakeLists.txt linguist-vendored
 CMakeLists.txt -linguist-detectable
