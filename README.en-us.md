@@ -29,7 +29,7 @@ Bringing the mathematical elegance, dynamic rate functions, and geometric constr
 ## 🛠️ Building & Installation
 
 ### Download Prebuilt Binaries (Recommended)
-1. Head to the **[Actions](https://github.com/VincentZyu233/obs-manim-lile-motion/actions)** tab or Releases.
+1. Head to the **[Actions](https://github.com/VincentZyu233/obs-manim-like-motion/actions)** tab or Releases.
 2. Download the latest `obs-manim-motion-*-windows-x64` zip archive.
 3. Extract `obs-manim-motion.dll` and the `data/obs-plugins/obs-manim-motion` folder into your OBS Studio directory:
    - DLL: `<OBS_INSTALL_DIR>/obs-plugins/64bit/obs-manim-motion.dll`

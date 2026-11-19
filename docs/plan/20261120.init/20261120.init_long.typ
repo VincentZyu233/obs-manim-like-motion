@@ -106,7 +106,7 @@
 
 #card-box(title: "项目元信息与上游依赖", icon: "📌", stroke-color: c-primary, fill-color: rgb("#f0f9ff"))[
   - *文档日期*：`2026-11-20`
-  - *项目路径*：`D:/aaaStuffsaaa/from_git/github/obs/obs-manim-lile-motion`
+  - *项目路径*：`D:/aaaStuffsaaa/from_git/github/obs/obs-manim-like-motion`
   - *参考上游仓库*：
     - `Manim Community Edition`：数学动画渲染拓扑与动力学缓动
     - `obs-move-transition`：OBS 转场插件渲染接口与时间轴插值

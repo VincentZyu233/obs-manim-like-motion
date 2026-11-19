@@ -31,7 +31,7 @@
 ## 🚀 下载与安装
 
 ### 方式一：下载预编译包（推荐）
-1. 进入本仓库的 **[Actions](https://github.com/VincentZyu233/obs-manim-lile-motion/actions)** 或 Releases 页面。
+1. 进入本仓库的 **[Actions](https://github.com/VincentZyu233/obs-manim-like-motion/actions)** 或 Releases 页面。
 2. 下载最新的 `obs-manim-motion-*-windows-x64` 构建压缩包。
 3. 解压并将其放置在 OBS Studio 安装目录下：
    - 动态链接库：`<OBS安装目录>/obs-plugins/64bit/obs-manim-motion.dll`
