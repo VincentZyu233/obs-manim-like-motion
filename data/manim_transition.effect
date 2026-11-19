@@ -6,7 +6,7 @@ uniform int phase;           // 0: Exit, 1: Pause, 2: Entrance
 uniform int exit_mode;       // 0: FadeOut, 1: Uncreate
 uniform int enter_mode;      // 0: FadeIn, 1: Create
 uniform float progress;      // Normalized 0.0 to 1.0 for the active phase
-uniform float4 border_color; // e.g. Yellow (1.0, 0.9, 0.0, 1.0)
+uniform float4 border_color; // e.g. Mizuiro Water Blue (#7FA8E8, 0.498, 0.659, 0.910, 1.0)
 uniform float border_thickness; // Thickness in UV units
 uniform float glow_intensity;   // Glow multiplier
 uniform float2 canvas_size;     // Screen width, height

@@ -219,7 +219,7 @@ static void manim_defaults(obs_data_t *settings)
     obs_data_set_default_int(settings, "enter_mode", 1);      // Create
     obs_data_set_default_double(settings, "split_ratio", 42.0);
     obs_data_set_default_double(settings, "pause_ratio", 6.0);
-    obs_data_set_default_int(settings, "border_color", 0xFF00FFFF); // Yellow
+    obs_data_set_default_int(settings, "border_color", 0xFFE8A87F); // Mizuiro Water Blue (#7FA8E8)
     obs_data_set_default_double(settings, "border_thickness", 0.008);
     obs_data_set_default_double(settings, "glow_intensity", 1.6);
 }
