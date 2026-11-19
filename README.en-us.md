@@ -1,8 +1,9 @@
-# obs-manim-motion
+# obs-manim-like-motion
 
 > **Manim-inspired kinetic transitions and animation effects for OBS Studio.**
 
-[中文说明 (README.md)](README.md) | **English Documentation**
+> **[📖 English](README.en-us.md)**
+> **[📖 简体中文(大陆)](README.md)**
 
 Bringing the mathematical elegance, dynamic rate functions, and geometric construction animations from **[Manim](https://github.com/ManimCommunity/manim)** directly into **OBS Studio**.
 
