@@ -31,19 +31,21 @@
 
 ## 🚀 下载与安装
 
-### 方式一：下载预编译包（推荐）
-1. 进入本仓库的 **[Actions](https://github.com/VincentZyu233/obs-manim-like-motion/actions)** 或 Releases 页面。
-2. 下载最新的 `obs-manim-motion-*-windows-x64` 构建压缩包。
-3. 解压并将其放置在 OBS Studio 安装目录下：
-   - 动态链接库：`<OBS安装目录>/obs-plugins/64bit/obs-manim-motion.dll`
-   - 资源数据：`<OBS安装目录>/data/obs-plugins/obs-manim-motion/`
-4. 启动 OBS Studio，在**转场动画（Scene Transitions）**中点击 `+` 号添加转场，选择 **Manim 动力学转场 (Manim Motion)** 即可！
+### 获取正式发布版（GitHub Releases）
+请前往项目的 **[Releases](https://github.com/VincentZyu233/obs-manim-like-motion/releases)** 页面下载对应系统的最新发布包：
 
----
+#### 🪟 Windows x64
+下载 `obs-manim-motion-*-windows-x64.zip`，解压至你的 OBS 安装目录：
+* 动态链接库：`<OBS安装目录>/obs-plugins/64bit/obs-manim-motion.dll`
+* 资源与着色器：`<OBS安装目录>/data/obs-plugins/obs-manim-motion/`
 
-## 🗺️ 项目规划与设计文档
+#### 🐧 Linux x64 (Ubuntu / Debian / 通用发行版)
+* **Debian / Ubuntu**：直接下载 `.deb` 包执行 `sudo dpkg -i obs-manim-motion-*.deb` 即可。
+* **通用 Linux 手动放置**：下载解压包放置在用户插件目录：
+  * 共享库：`~/.config/obs-studio/plugins/obs-manim-motion/bin/64bit/obs-manim-motion.so`
+  * 资源数据：`~/.config/obs-studio/plugins/obs-manim-motion/data/`
 
-* 技术调研与详细架构设计草案请参阅：[docs/plan/20261120.init/20261120.init.md](docs/plan/20261120.init/20261120.init.md)
+安装完成后启动 OBS Studio，在右下角 **转场动画** 停靠窗口点击 **`+`** 号选择 **Manim 动力学转场 (Manim Motion)** 即可配置使用！
 
 ---
 
