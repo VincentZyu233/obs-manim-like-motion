@@ -30,6 +30,7 @@ struct manim_transition_info {
     int exit_mode;
     int enter_mode;
     int contour_mode;
+    int color_preset;
     float split_t;
     float pause_t;
     struct vec4 border_color;
@@ -52,6 +53,7 @@ static void manim_update(void *data, obs_data_t *settings)
     info->exit_mode = (int)obs_data_get_int(settings, "exit_mode");
     info->enter_mode = (int)obs_data_get_int(settings, "enter_mode");
     info->contour_mode = (int)obs_data_get_int(settings, "contour_mode");
+    info->color_preset = (int)obs_data_get_int(settings, "color_preset");
 
     double split_pct = obs_data_get_double(settings, "split_ratio");
     if (split_pct <= 0.0) split_pct = 42.0;
@@ -239,6 +241,7 @@ static void manim_defaults(obs_data_t *settings)
     obs_data_set_default_int(settings, "exit_mode", 0);       // FadeOut
     obs_data_set_default_int(settings, "enter_mode", 1);      // Create
     obs_data_set_default_int(settings, "contour_mode", 0);    // GPU XDoG
+    obs_data_set_default_int(settings, "color_preset", 0);    // Mizuiro (#7FA8E8)
     obs_data_set_default_double(settings, "split_ratio", 42.0);
     obs_data_set_default_double(settings, "pause_ratio", 6.0);
     obs_data_set_default_int(settings, "border_color", 0xFFE8A87F); // Mizuiro Water Blue (#7FA8E8)
@@ -246,6 +249,26 @@ static void manim_defaults(obs_data_t *settings)
     obs_data_set_default_double(settings, "glow_intensity", 1.6);
     obs_data_set_default_double(settings, "contour_sensitivity", 0.22);
     obs_data_set_default_double(settings, "fill_delay", 45.0);
+}
+
+static bool color_preset_changed(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
+{
+    UNUSED_PARAMETER(props);
+    UNUSED_PARAMETER(p);
+    int preset = (int)obs_data_get_int(settings, "color_preset");
+    uint32_t c = 0;
+    switch (preset) {
+    case 0: c = 0xFFE8A87F; break; // 水色雾蓝 (#7FA8E8)
+    case 1: c = 0xFFFFEBDC; break; // 冰蓝微光 (#DCEBFF)
+    case 2: c = 0xFFFFFFFF; break; // 经典粉笔白 (#FFFFFF)
+    case 3: c = 0xFF00D7FF; break; // 黄金流光 (#FFD700)
+    case 4: c = 0xFFD7C6F4; break; // 缎带柔粉 (#F4C6D7)
+    case 5: c = 0xFFDEF3FF; break; // 奶油温白 (#FFF3DE)
+    case 6: c = 0xFFFFFF00; break; // 赛博霓虹青 (#00FFFF)
+    default: return true;          // 7: 自定义
+    }
+    obs_data_set_int(settings, "border_color", c);
+    return true;
 }
 
 static obs_properties_t *manim_properties(void *data)
@@ -277,6 +300,20 @@ static obs_properties_t *manim_properties(void *data)
 
     obs_properties_add_float_slider(props, "split_ratio", obs_module_text("TimingSplit"), 10.0, 80.0, 1.0);
     obs_properties_add_float_slider(props, "pause_ratio", obs_module_text("PauseDuration"), 0.0, 20.0, 1.0);
+
+    obs_property_t *prop_color_preset = obs_properties_add_list(
+        props, "color_preset", obs_module_text("ColorPreset"),
+        OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+    obs_property_list_add_int(prop_color_preset, obs_module_text("ColorPreset.Mizuiro"), 0);
+    obs_property_list_add_int(prop_color_preset, obs_module_text("ColorPreset.IceBlue"), 1);
+    obs_property_list_add_int(prop_color_preset, obs_module_text("ColorPreset.ChalkWhite"), 2);
+    obs_property_list_add_int(prop_color_preset, obs_module_text("ColorPreset.MathGold"), 3);
+    obs_property_list_add_int(prop_color_preset, obs_module_text("ColorPreset.RibbonPink"), 4);
+    obs_property_list_add_int(prop_color_preset, obs_module_text("ColorPreset.CreamWhite"), 5);
+    obs_property_list_add_int(prop_color_preset, obs_module_text("ColorPreset.NeonCyan"), 6);
+    obs_property_list_add_int(prop_color_preset, obs_module_text("ColorPreset.Custom"), 7);
+
+    obs_property_set_modified_callback(prop_color_preset, color_preset_changed);
 
     obs_properties_add_color(props, "border_color", obs_module_text("BorderColor"));
     obs_properties_add_float_slider(props, "border_thickness", obs_module_text("BorderThickness"), 0.002, 0.03, 0.001);
