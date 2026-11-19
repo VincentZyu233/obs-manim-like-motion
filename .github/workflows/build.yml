@@ -1,0 +1,97 @@
+name: Build Manim Motion Plugin
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  windows-build:
+    name: Build Windows x64 🪟
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Parse Buildspec
+        id: setup
+        run: |
+          $BuildSpec = Get-Content -Path buildspec.json -Raw | ConvertFrom-Json
+          "pluginName=$($BuildSpec.name)" >> $env:GITHUB_OUTPUT
+          "pluginVersion=$($BuildSpec.version)" >> $env:GITHUB_OUTPUT
+          "commitHash=$($env:GITHUB_SHA.Substring(0, 9))" >> $env:GITHUB_OUTPUT
+
+      - name: Build Plugin 🧱
+        uses: ./.github/actions/build-plugin
+        with:
+          target: x64
+          config: RelWithDebInfo
+
+      - name: Package Plugin 📀
+        uses: ./.github/actions/package-plugin
+        with:
+          target: x64
+          config: RelWithDebInfo
+
+      - name: Upload Windows Artifacts 📡
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-windows-x64-${{ steps.setup.outputs.commitHash }}
+          path: |
+            release/*.zip
+            build_x64/rundir/RelWithDebInfo/${{ steps.setup.outputs.pluginName }}.dll
+            build_x64/rundir/RelWithDebInfo/${{ steps.setup.outputs.pluginName }}.pdb
+            build_x64/rundir/RelWithDebInfo/${{ steps.setup.outputs.pluginName }}/**
+
+  ubuntu-build:
+    name: Build Ubuntu Linux x64 🐧
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Parse Buildspec
+        id: setup
+        run: |
+          product_name="$(jq -r .name buildspec.json)"
+          product_version="$(jq -r .version buildspec.json)"
+          echo "pluginName=${product_name}" >> $GITHUB_OUTPUT
+          echo "pluginVersion=${product_version}" >> $GITHUB_OUTPUT
+          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+
+      - name: Build Plugin 🧱
+        uses: ./.github/actions/build-plugin
+        with:
+          target: x86_64
+          config: RelWithDebInfo
+
+      - name: Package Plugin 📀
+        uses: ./.github/actions/package-plugin
+        with:
+          target: x86_64
+          config: RelWithDebInfo
+          package: true
+
+      - name: Upload Ubuntu Artifacts 📡
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-ubuntu-x86_64-${{ steps.setup.outputs.commitHash }}
+          path: |
+            release/*.*
+            build_x86_64/rundir/RelWithDebInfo/${{ steps.setup.outputs.pluginName }}.so

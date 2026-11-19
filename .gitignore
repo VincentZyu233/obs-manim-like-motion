@@ -1,0 +1,11 @@
+build_*/
+release/
+.ccache/
+*.user
+*.suo
+.vs/
+.idea/
+.vscode/
+*.generated.iss
+version.h
+rundir/
