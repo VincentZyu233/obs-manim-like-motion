@@ -22,15 +22,21 @@ struct manim_transition_info {
     gs_eparam_t *param_border_thickness;
     gs_eparam_t *param_glow_intensity;
     gs_eparam_t *param_canvas_size;
+    gs_eparam_t *param_contour_mode;
+    gs_eparam_t *param_contour_sensitivity;
+    gs_eparam_t *param_fill_delay;
 
     // Transition parameters
     int exit_mode;
     int enter_mode;
+    int contour_mode;
     float split_t;
     float pause_t;
     struct vec4 border_color;
     float border_thickness;
     float glow_intensity;
+    float contour_sensitivity;
+    float fill_delay;
 };
 
 static const char *manim_get_name(void *type_data)
@@ -45,6 +51,7 @@ static void manim_update(void *data, obs_data_t *settings)
 
     info->exit_mode = (int)obs_data_get_int(settings, "exit_mode");
     info->enter_mode = (int)obs_data_get_int(settings, "enter_mode");
+    info->contour_mode = (int)obs_data_get_int(settings, "contour_mode");
 
     double split_pct = obs_data_get_double(settings, "split_ratio");
     if (split_pct <= 0.0) split_pct = 42.0;
@@ -62,8 +69,8 @@ static void manim_update(void *data, obs_data_t *settings)
 
     uint32_t color_val = (uint32_t)obs_data_get_int(settings, "border_color");
     if (color_val == 0) {
-        // Default Manim Yellow #FFFF00FF (ABGR: 0xFF00FFFF in little-endian)
-        color_val = 0xFF00FFFF;
+        // Default Mizuiro Water Blue #7FA8E8 (ABGR: 0xFFE8A87F)
+        color_val = 0xFFE8A87F;
     }
     vec4_from_rgba(&info->border_color, color_val);
 
@@ -74,6 +81,14 @@ static void manim_update(void *data, obs_data_t *settings)
     double glow = obs_data_get_double(settings, "glow_intensity");
     if (glow <= 0.0) glow = 1.6;
     info->glow_intensity = (float)glow;
+
+    double sens = obs_data_get_double(settings, "contour_sensitivity");
+    if (sens <= 0.0) sens = 0.22;
+    info->contour_sensitivity = (float)sens;
+
+    double fdelay = obs_data_get_double(settings, "fill_delay");
+    if (fdelay <= 0.0) fdelay = 45.0;
+    info->fill_delay = (float)(fdelay / 100.0);
 }
 
 static void *manim_create(obs_data_t *settings, obs_source_t *source)
@@ -112,6 +127,9 @@ static void *manim_create(obs_data_t *settings, obs_source_t *source)
     info->param_border_thickness = gs_effect_get_param_by_name(info->effect, "border_thickness");
     info->param_glow_intensity = gs_effect_get_param_by_name(info->effect, "glow_intensity");
     info->param_canvas_size = gs_effect_get_param_by_name(info->effect, "canvas_size");
+    info->param_contour_mode = gs_effect_get_param_by_name(info->effect, "contour_mode");
+    info->param_contour_sensitivity = gs_effect_get_param_by_name(info->effect, "contour_sensitivity");
+    info->param_fill_delay = gs_effect_get_param_by_name(info->effect, "fill_delay");
 
     manim_update(info, settings);
     return info;
@@ -181,6 +199,9 @@ static void manim_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t
     gs_effect_set_float(info->param_border_thickness, info->border_thickness);
     gs_effect_set_float(info->param_glow_intensity, info->glow_intensity);
     gs_effect_set_vec2(info->param_canvas_size, &canvas_sz);
+    gs_effect_set_int(info->param_contour_mode, info->contour_mode);
+    gs_effect_set_float(info->param_contour_sensitivity, info->contour_sensitivity);
+    gs_effect_set_float(info->param_fill_delay, info->fill_delay);
 
     while (gs_effect_loop(info->effect, "Transition")) {
         gs_draw_sprite(NULL, 0, cx, cy);
@@ -217,11 +238,14 @@ static void manim_defaults(obs_data_t *settings)
 {
     obs_data_set_default_int(settings, "exit_mode", 0);       // FadeOut
     obs_data_set_default_int(settings, "enter_mode", 1);      // Create
+    obs_data_set_default_int(settings, "contour_mode", 0);    // GPU XDoG
     obs_data_set_default_double(settings, "split_ratio", 42.0);
     obs_data_set_default_double(settings, "pause_ratio", 6.0);
     obs_data_set_default_int(settings, "border_color", 0xFFE8A87F); // Mizuiro Water Blue (#7FA8E8)
     obs_data_set_default_double(settings, "border_thickness", 0.008);
     obs_data_set_default_double(settings, "glow_intensity", 1.6);
+    obs_data_set_default_double(settings, "contour_sensitivity", 0.22);
+    obs_data_set_default_double(settings, "fill_delay", 45.0);
 }
 
 static obs_properties_t *manim_properties(void *data)
@@ -240,6 +264,16 @@ static obs_properties_t *manim_properties(void *data)
         OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
     obs_property_list_add_int(prop_enter, obs_module_text("EnterMode.FadeIn"), 0);
     obs_property_list_add_int(prop_enter, obs_module_text("EnterMode.Create"), 1);
+
+    obs_property_t *prop_contour = obs_properties_add_list(
+        props, "contour_mode", obs_module_text("ContourMode"),
+        OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+    obs_property_list_add_int(prop_contour, obs_module_text("ContourMode.XDoG"), 0);
+    obs_property_list_add_int(prop_contour, obs_module_text("ContourMode.Fourier"), 1);
+    obs_property_list_add_int(prop_contour, obs_module_text("ContourMode.Disabled"), 2);
+
+    obs_properties_add_float_slider(props, "contour_sensitivity", obs_module_text("ContourSensitivity"), 0.05, 0.50, 0.01);
+    obs_properties_add_float_slider(props, "fill_delay", obs_module_text("FillDelay"), 10.0, 80.0, 1.0);
 
     obs_properties_add_float_slider(props, "split_ratio", obs_module_text("TimingSplit"), 10.0, 80.0, 1.0);
     obs_properties_add_float_slider(props, "pause_ratio", obs_module_text("PauseDuration"), 0.0, 20.0, 1.0);
