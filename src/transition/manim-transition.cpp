@@ -83,6 +83,9 @@ static void *manim_create(obs_data_t *settings, obs_source_t *source)
 
     char *effect_path = obs_module_file("manim_transition.effect");
     if (!effect_path) {
+        effect_path = obs_module_file("effects/manim_transition.effect");
+    }
+    if (!effect_path) {
         blog(LOG_ERROR, "[obs-manim-motion] manim_transition.effect not found in module directory");
         bfree(info);
         return NULL;

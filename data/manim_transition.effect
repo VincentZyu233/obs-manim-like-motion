@@ -1,0 +1,190 @@
+uniform float4x4 ViewProj;
+uniform texture2d tex_a;
+uniform texture2d tex_b;
+
+uniform int phase;           // 0: Exit, 1: Pause, 2: Entrance
+uniform int exit_mode;       // 0: FadeOut, 1: Uncreate
+uniform int enter_mode;      // 0: FadeIn, 1: Create
+uniform float progress;      // Normalized 0.0 to 1.0 for the active phase
+uniform float4 border_color; // e.g. Yellow (1.0, 0.9, 0.0, 1.0)
+uniform float border_thickness; // Thickness in UV units
+uniform float glow_intensity;   // Glow multiplier
+uniform float2 canvas_size;     // Screen width, height
+
+sampler_state textureSampler {
+    Filter    = Linear;
+    AddressU  = Clamp;
+    AddressV  = Clamp;
+};
+
+struct VertData {
+    float2 uv  : TEXCOORD0;
+    float4 pos : POSITION;
+};
+
+struct FragData {
+    float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+    VertData vert_out;
+    vert_out.uv  = v_in.uv;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    return vert_out;
+}
+
+// Compute perimeter coordinate s in [0, 4) along rectangle perimeter clockwise starting from top-left (0,0)
+float get_perimeter_s(float2 uv)
+{
+    float u = uv.x;
+    float v = uv.y;
+
+    if (v <= u && v <= (1.0 - u)) {
+        // Top edge: (0,0) to (1,0)
+        return u;
+    } else if ((1.0 - u) < v && (1.0 - u) <= (1.0 - v)) {
+        // Right edge: (1,0) to (1,1)
+        return 1.0 + v;
+    } else if ((1.0 - v) < u && (1.0 - v) < (1.0 - u)) {
+        // Bottom edge: (1,1) to (0,1)
+        return 2.0 + (1.0 - u);
+    } else {
+        // Left edge: (0,1) to (0,0)
+        return 3.0 + (1.0 - v);
+    }
+}
+
+// Distance from UV to closest border edge, corrected for aspect ratio
+float get_border_distance(float2 uv, float aspect)
+{
+    float dx = min(uv.x, 1.0 - uv.x) * aspect;
+    float dy = min(uv.y, 1.0 - uv.y);
+    return min(dx, dy);
+}
+
+// Exit Phase Shader (Scene A)
+float4 RenderExit(FragData f_in)
+{
+    float aspect = canvas_size.x / max(canvas_size.y, 1.0);
+    float p = saturate(progress);
+
+    if (exit_mode == 0) {
+        // Mode 0: FadeOut with gentle kinetic shrink
+        float scale = 1.0 + 0.05 * p;
+        float2 uv_s = (f_in.uv - 0.5) * scale + 0.5;
+        if (uv_s.x < 0.0 || uv_s.x > 1.0 || uv_s.y < 0.0 || uv_s.y > 1.0) {
+            return float4(0.0, 0.0, 0.0, 0.0);
+        }
+        float4 c = tex_a.Sample(textureSampler, uv_s);
+        float alpha = 1.0 - p;
+        return c * alpha;
+    } else {
+        // Mode 1: Uncreate (Inverse of DrawBorderThenFill)
+        float dist = get_border_distance(f_in.uv, aspect);
+        float s = get_perimeter_s(f_in.uv);
+        float T = border_thickness;
+
+        if (p < 0.5) {
+            // Sub-phase 1: Interior dissolves away, border becomes fully visible
+            float sub_p = p / 0.5;
+            float4 img = tex_a.Sample(textureSampler, f_in.uv);
+            float interior_alpha = saturate(1.0 - sub_p * 1.2);
+            
+            float is_border = (dist <= T) ? 1.0 : 0.0;
+            float edge_factor = smoothstep(T, max(T - 0.002, 0.0), dist);
+            float4 b_col = border_color * edge_factor * (1.0 + glow_intensity * 0.5);
+
+            return lerp(img * interior_alpha, b_col, is_border * sub_p);
+        } else {
+            // Sub-phase 2: Border rewinds and disappears counter-clockwise
+            float sub_p = (p - 0.5) / 0.5;
+            float remain_s = 4.0 * (1.0 - sub_p);
+
+            if (dist <= T && s <= remain_s) {
+                float tip_dist = max(0.0, remain_s - s);
+                float glow = 1.0 + glow_intensity * exp(-tip_dist * 8.0);
+                float edge_factor = smoothstep(T, max(T - 0.002, 0.0), dist);
+                return border_color * glow * edge_factor;
+            }
+            return float4(0.0, 0.0, 0.0, 0.0);
+        }
+    }
+}
+
+// Entrance Phase Shader (Scene B)
+float4 RenderEntrance(FragData f_in)
+{
+    float aspect = canvas_size.x / max(canvas_size.y, 1.0);
+    float p = saturate(progress);
+
+    if (enter_mode == 0) {
+        // Mode 0: FadeIn with kinetic settling
+        float scale = 1.0 + 0.04 * (1.0 - p);
+        float2 uv_s = (f_in.uv - 0.5) * scale + 0.5;
+        if (uv_s.x < 0.0 || uv_s.x > 1.0 || uv_s.y < 0.0 || uv_s.y > 1.0) {
+            return float4(0.0, 0.0, 0.0, 0.0);
+        }
+        float4 c = tex_b.Sample(textureSampler, uv_s);
+        return c * p;
+    } else {
+        // Mode 1: Create (DrawBorderThenFill)
+        float dist = get_border_distance(f_in.uv, aspect);
+        float s = get_perimeter_s(f_in.uv);
+        float T = border_thickness;
+
+        if (p < 0.5) {
+            // Sub-phase 1: Draw glowing border around rectangle
+            float sub_p = p / 0.5;
+            float draw_s = 4.0 * sub_p;
+
+            if (dist <= T && s <= draw_s) {
+                float tip_dist = max(0.0, draw_s - s);
+                float glow = 1.0 + glow_intensity * exp(-tip_dist * 6.0);
+                float edge_factor = smoothstep(T, max(T - 0.002, 0.0), dist);
+                return border_color * glow * edge_factor;
+            }
+            return float4(0.0, 0.0, 0.0, 0.0);
+        } else {
+            // Sub-phase 2: Border is full, interior fills in from center outward
+            float sub_p = (p - 0.5) / 0.5;
+            float4 img = tex_b.Sample(textureSampler, f_in.uv);
+
+            float center_dist = length((f_in.uv - 0.5) * float2(aspect, 1.0));
+            float max_dist = length(float2(0.5 * aspect, 0.5));
+            float norm_r = center_dist / max(max_dist, 0.0001);
+
+            // Expanding reveal wave
+            float reveal = saturate((sub_p * 1.3 - norm_r) * 4.0);
+
+            float is_border = (dist <= T) ? 1.0 : 0.0;
+            float edge_factor = smoothstep(T, max(T - 0.002, 0.0), dist);
+            float border_fade = saturate(1.0 - sub_p);
+            float4 b_col = border_color * (1.0 + glow_intensity * 0.5) * edge_factor;
+
+            float4 filled_scene = img * reveal;
+            return (is_border > 0.0) ? lerp(filled_scene, b_col, border_fade) : filled_scene;
+        }
+    }
+}
+
+float4 PSMain(FragData f_in) : TARGET
+{
+    if (phase == 0) {
+        return RenderExit(f_in);
+    } else if (phase == 1) {
+        // Pause phase: clean black/transparent
+        return float4(0.0, 0.0, 0.0, 0.0);
+    } else {
+        return RenderEntrance(f_in);
+    }
+}
+
+technique Transition
+{
+    pass
+    {
+        vertex_shader = VSDefault(v_in);
+        pixel_shader  = PSMain(f_in);
+    }
+}
