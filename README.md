@@ -48,7 +48,7 @@
 ## 🚀 下载与安装
 
 ### 获取正式发布版（GitHub Releases）
-请前往项目的 **[Releases](https://github.com/VincentZyu233/obs-manim-like-motion/releases)** 页面下载对应系统的最新发布包：
+请前往项目的 **[Releases](https://github.com/VincentZyuLive/obs-manim-like-motion/releases)** 页面下载对应系统的最新发布包：
 
 #### 🪟 Windows x64
 下载 `obs-manim-motion-*-windows-x64.zip`，解压至你的 OBS 安装目录：

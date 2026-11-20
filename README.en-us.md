@@ -48,7 +48,7 @@ Cross-platform builds and releases are automated via GitHub Actions, featuring a
 ## 🛠️ Download & Installation
 
 ### Official Releases (GitHub Releases)
-Head over to the **[Releases](https://github.com/VincentZyu233/obs-manim-like-motion/releases)** page to download the latest prebuilt packages:
+Head over to the **[Releases](https://github.com/VincentZyuLive/obs-manim-like-motion/releases)** page to download the latest prebuilt packages:
 
 #### 🪟 Windows x64
 Download `obs-manim-motion-*-windows-x64.zip` and extract into your OBS installation directory:
