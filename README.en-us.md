@@ -63,6 +63,9 @@ Download `obs-manim-motion-*-windows-x64.zip` and extract into your OBS installa
 
 After installation, launch OBS Studio, click the **`+`** button in the **Scene Transitions** dock, and choose **Manim Motion**!
 
+> [!TIP]
+> **Plugin Update Notice**: If you replace or upgrade plugin files (`.dll`, `.so`, or `.effect` shader assets) while OBS Studio is running, **you must restart OBS Studio** to load the newly updated binaries, property UI controls, and effect shaders.
+
 ---
 
 ## 📜 License
