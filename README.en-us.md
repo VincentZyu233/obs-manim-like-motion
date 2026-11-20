@@ -9,20 +9,29 @@ Bringing the mathematical elegance, dynamic rate functions, and geometric constr
 
 ---
 
-## 🌟 Highlights (v0.1.0)
+## 🌟 Highlights
 
 - **$M \times N$ Cartesian Product Transition Architecture**:
-  - Independent **Exit** and **Entrance** phases decoupled on the normalized time pipeline.
-- **Exit Animations ($M=2$)**:
+  - Independent **Exit**, **Pause**, and **Entrance** phases decoupled on the normalized time pipeline.
+  - Mix and match any exit and entrance animation inside OBS transition properties.
+- **Exit Animations**:
   - `FadeOut`: Kinetic acceleration exit based on Manim's `rush_into` with subtle scale-down dynamics.
-  - `Uncreate`: Geometric border rewind—interior dissolves outward, revealing a glowing border that unwinds counter-clockwise.
-- **Entrance Animations ($N=2$)**:
+  - `Uncreate`: Geometric deconstruction—scene colors dissolve outward, revealing glowing wireframe contours that rewind/dissolve.
+- **Entrance Animations**:
   - `FadeIn`: Kinetic deceleration landing based on Manim's `rush_from` with smooth settling dynamics.
-  - `Create` (`DrawBorderThenFill`): High-intensity neon outline drawn clockwise along the canvas perimeter, followed by a radial fill wave unveiling the incoming scene.
-- **Customizable Timing & Aesthetics**:
-  - Adjust Exit/Entrance ratio, pause gap, stroke color (default Mizuiro mist blue `#7FA8E8`, inspired by OBS Stage watercolor aesthetics), thickness, and glow multiplier.
+  - `Create` (`DrawBorderThenFill`): High-intensity outline drawn on canvas perimeter and internal scene elements, followed by a fluid color fill wave.
+- **Real-Time GPU Contour Extraction**:
+  - Utilizes 3x3 Scharr gradient operators and Fourier harmonic wave modulation to transform any real-time screen into high-contrast chalkboard sketches in sub-millisecond shader passes.
+  - 3-way mode switch: **`GPU Real-Time Sketch (XDoG)`**, **`Fourier Harmonic Waves`**, and **`Disabled (Border Only)`**.
+- **Stroke Color Preset Palette**:
+  - 7 preset themes (Mizuiro mist blue `#7FA8E8`, Ice Blue `#DCEBFF`, Chalk White `#FFFFFF`, Math Gold `#FFD700`, Ribbon Pink `#F4C6D7`, Cream White `#FFF3DE`, Cyber Neon Cyan `#00FFFF`) plus custom RGBA color picker.
+  - Instant synchronization between dropdown presets and native OBS color swatch.
+- **Fine-Grained Dynamic Controls**:
+  - Contour Sensitivity & Fill-In Delay sliders.
+  - Exit timing split ratio & pause gap duration.
+  - Border stroke thickness & glow multiplier.
 - **Zero Local Overhead**:
-  - Pure GPU rendering via HLSL shaders (`.effect`).
+  - Pure GPU rendering via HLSL shaders (`.effect`) in modern C++20.
   - Automated cloud builds for **Windows x64** and **Linux x64** via GitHub Actions CI.
 
 ---
