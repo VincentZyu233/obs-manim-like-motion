@@ -57,7 +57,7 @@ Head over to the **[Releases](https://github.com/VincentZyuLive/obs-manim-like-m
 > [!NOTE]
 > To inspect the **internal folder layout and target installation paths** of each archive flavor (Standard, OBS 33+ Modular, Portable Non-Admin, Linux deb/tar.gz), please refer to [Archive Directory Layouts (.github/workflows/build.en-us.md)](.github/workflows/build.en-us.md#📦-artifacts--package-structure).
 
-After installation, launch OBS Studio, click the **`+`** button in the **Scene Transitions** dock, and choose **Manim Motion**!
+After installation, launch OBS Studio, click the **`+`** button in the **Scene Transitions** dock, and choose **Manim Like**!
 
 > [!TIP]
 > **Plugin Update Notice**: If you replace or upgrade plugin files (`.dll`, `.so`, or `.effect` shader assets) while OBS Studio is running, **you must restart OBS Studio** to load the newly updated binaries, property UI controls, and effect shaders.

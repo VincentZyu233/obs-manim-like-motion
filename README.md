@@ -57,7 +57,7 @@
 > [!NOTE]
 > 想要了解各压缩包（标准安装包、OBS 33+ 模块化包、免管理员权限包、Linux deb/tar.gz）的**内部目录结构与解压目标路径**，请跳转参阅 [构建产物目录结构说明 (.github/workflows/build.md)](.github/workflows/build.md#📦-产物规格与结构说明)。
 
-安装完成后启动 OBS Studio，在右下角 **转场动画** 停靠窗口点击 **`+`** 号选择 **Manim 动力学转场 (Manim Motion)** 即可配置使用！
+安装完成后启动 OBS Studio，在右下角 **转场动画** 停靠窗口点击 **`+`** 号选择 **Manim Like** 即可配置使用！
 
 > [!TIP]
 > **插件热更新提示**：若在 OBS Studio 正在运行期间替换或更新了插件文件（`.dll`、`.so` 或 `.effect` 资源），**必须重启 OBS Studio** 才能加载最新编译的二进制文件、属性面板配置项及着色器特效。
