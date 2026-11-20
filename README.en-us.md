@@ -7,6 +7,10 @@
 
 Bringing the mathematical elegance, dynamic rate functions, and geometric construction animations from **[Manim](https://github.com/ManimCommunity/manim)** directly into **OBS Studio**.
 
+<p align="center">
+  <img src="docs/media/preview.gif" alt="obs-manim-motion Real-time Preview" width="720">
+</p>
+
 ---
 
 ## 🌟 Highlights

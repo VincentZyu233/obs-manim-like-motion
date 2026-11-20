@@ -7,6 +7,10 @@
 
 本项目受数学动画引擎 **[Manim (Community Edition)](https://github.com/ManimCommunity/manim)** 启发，将 Manim 标志性的缓动速度曲线（Rate Functions）、几何勾勒与两段式构建动效带入 OBS 场景转场与画面呈现中。
 
+<p align="center">
+  <img src="docs/media/preview.gif" alt="obs-manim-motion 实时转场预览" width="720">
+</p>
+
 ---
 
 ## 🌟 核心特性
