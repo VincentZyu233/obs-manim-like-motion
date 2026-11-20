@@ -116,35 +116,32 @@ float get_flow_coordinate(float2 uv, int flow_mode, float aspect)
 {
     float s = 0.0;
     if (flow_mode == 0) {
-        // Mode 0: LTR Natural Line-by-Line (8 rows by default)
-        float rows = 8.0;
-        float row_idx = floor(uv.y * rows);
-        float row_u = uv.x;
-        s = (row_idx + row_u) / rows;
+        // Mode 0: Continuous Natural LTR Sweep (Like White Potato handwriting, smooth single wave)
+        // Slight italic tilt (0.08) creates authentic pen angle without multi-row artifacts
+        s = uv.x + (1.0 - uv.y) * 0.08;
+        s = s / 1.08;
     } else if (flow_mode == 1) {
-        // Mode 1: Boustrophedon (Snake handwriting: alternate left-right)
-        float rows = 8.0;
-        float row_idx = floor(uv.y * rows);
-        float is_odd = fmod(row_idx, 2.0);
-        float row_u = (is_odd > 0.5) ? (1.0 - uv.x) : uv.x;
-        s = (row_idx + row_u) / rows;
-    } else if (flow_mode == 2) {
-        // Mode 2: Vertical Waterfall Code Stream (12 columns)
-        float cols = 12.0;
-        float col_idx = floor(uv.x * cols);
-        float col_v = uv.y;
-        s = (col_idx + col_v) / cols;
-    } else if (flow_mode == 3) {
-        // Mode 3: Diagonal Sweep (Top-Left to Bottom-Right)
+        // Mode 1: Diagonal Sweep (Top-Left to Bottom-Right)
         s = (uv.x + uv.y) * 0.5;
-    } else {
-        // Mode 4: Spiral In (Polar Logarithmic Spiral)
+    } else if (flow_mode == 2) {
+        // Mode 2: Vertical Waterfall Code Stream (Continuous Top-to-Bottom)
+        s = uv.y + uv.x * 0.05;
+        s = s / 1.05;
+    } else if (flow_mode == 3) {
+        // Mode 3: Polar Mathematical Spiral (Spiral Inward)
         float2 rel = (uv - 0.5) * float2(aspect, 1.0);
         float r = length(rel);
         float angle = atan2(rel.y, rel.x); // [-PI, PI]
         float norm_angle = (angle + 3.14159265) / 6.2831853; // [0, 1]
-        float spiral = norm_angle + r * 2.0;
+        float spiral = norm_angle + r * 2.5;
         s = frac(spiral * 0.5);
+    } else {
+        // Mode 4: Multi-row Typography Scan (Boustrophedon 4-row)
+        float rows = 4.0;
+        float row_idx = floor(uv.y * rows);
+        float is_odd = fmod(row_idx, 2.0);
+        float row_u = (is_odd > 0.5) ? (1.0 - uv.x) : uv.x;
+        s = (row_idx + row_u) / rows;
     }
     return saturate(s);
 }
@@ -227,6 +224,11 @@ float4 RenderExit(FragData f_in)
         float erase_front = 1.0 - p;
         float lag = clamp(lag_ratio, 0.02, 0.98);
 
+        // Strict erased cutoff: beyond erase_front is already wiped out
+        if (s > erase_front) {
+            return float4(0.0, 0.0, 0.0, 0.0);
+        }
+
         float edge = 0.0;
         if (contour_mode == 0) {
             edge = get_contour(tex_a, f_in.uv, contour_sensitivity);
@@ -236,23 +238,22 @@ float4 RenderExit(FragData f_in)
             edge = 0.5;
         }
 
-        if (s > erase_front) {
-            // Already erased
-            return float4(0.0, 0.0, 0.0, 0.0);
-        } else if (s > (erase_front - lag)) {
-            // In the active stroke erasure window: color fades to outline stroke
-            float sub_pct = (erase_front - s) / lag; // 1.0 at erase_front - lag, 0.0 at erase_front
-            float4 img = tex_a.Sample(textureSampler, f_in.uv);
-            
-            // Pen tip glow highlight
-            float tip_dist = abs(s - erase_front);
-            float tip_kernel = exp(-tip_dist * 40.0) * tip_glow;
+        float4 img = tex_a.Sample(textureSampler, f_in.uv);
 
-            float4 stroke_col = border_color * (edge * (1.0 + glow_intensity * 0.6) + tip_kernel);
-            return lerp(stroke_col, img, sub_pct);
+        // Pen tip / eraser glow kernel
+        float tip_dist = abs(s - erase_front);
+        float tip_kernel = exp(-tip_dist * 45.0) * tip_glow;
+
+        if (s > (erase_front - lag)) {
+            // Active stroke erasure zone: image fades out leaving glowing line skeleton
+            float sub_pct = (erase_front - s) / lag; // 1.0 at erase_front - lag, 0.0 at erase_front
+            float infill_ramp = smoothstep(0.0, 1.0, sub_pct);
+
+            float4 stroke_col = border_color * (edge * (1.2 + glow_intensity * 0.7) + tip_kernel);
+            return stroke_col + img * infill_ramp;
         } else {
             // Fully intact Scene A before eraser reaches it
-            return tex_a.Sample(textureSampler, f_in.uv);
+            return img;
         }
     }
 }
@@ -342,6 +343,11 @@ float4 RenderEntrance(FragData f_in)
         float write_front = p;
         float lag = clamp(lag_ratio, 0.02, 0.98);
 
+        // Strict unwritten cutoff: beyond write_front is strictly invisible
+        if (s > write_front) {
+            return float4(0.0, 0.0, 0.0, 0.0);
+        }
+
         float edge = 0.0;
         if (contour_mode == 0) {
             edge = get_contour(tex_b, f_in.uv, contour_sensitivity);
@@ -351,24 +357,23 @@ float4 RenderEntrance(FragData f_in)
             edge = 0.5;
         }
 
-        if (s > write_front) {
-            // Not yet written
-            return float4(0.0, 0.0, 0.0, 0.0);
-        } else if (s > (write_front - lag)) {
-            // Active writing stroke zone: glowing outline and pen tip sparkle
-            float sub_pct = (write_front - s) / lag; // 0.0 at write_front (just drawn), 1.0 at lag border
-            float4 img = tex_b.Sample(textureSampler, f_in.uv);
+        float4 img = tex_b.Sample(textureSampler, f_in.uv);
 
-            // Pen tip glow kernel
-            float tip_dist = abs(s - write_front);
-            float tip_kernel = exp(-tip_dist * 40.0) * tip_glow;
+        // Pen tip glow kernel
+        float tip_dist = abs(s - write_front);
+        float tip_kernel = exp(-tip_dist * 45.0) * tip_glow;
 
-            float4 stroke_col = border_color * (edge * (1.0 + glow_intensity * 0.8) + tip_kernel);
-            float infill_weight = smoothstep(0.0, 1.0, 1.0 - sub_pct); // 0 at stroke front, 1 as it fills
-            return lerp(img, stroke_col, infill_weight);
+        if (s > (write_front - lag)) {
+            // Active writing stroke zone: high-contrast glowing outline, base image is translucent
+            float sub_pct = (write_front - s) / lag; // 0.0 at pen tip, 1.0 at fill-in boundary
+            float infill_ramp = smoothstep(0.0, 1.0, 1.0 - sub_pct); // 0 at pen tip, 1 at boundary
+
+            float4 stroke_col = border_color * (edge * (1.2 + glow_intensity * 0.9) + tip_kernel);
+            return stroke_col + img * infill_ramp;
         } else {
-            // Fully written and filled with Scene B content
-            return tex_b.Sample(textureSampler, f_in.uv);
+            // Infilled body: image fully revealed, plus faint pen tip residual if close
+            float4 tip_sparkle = border_color * tip_kernel;
+            return img + tip_sparkle;
         }
     }
 }

@@ -323,11 +323,11 @@ static obs_properties_t *manim_properties(void *data)
     obs_property_t *prop_flow = obs_properties_add_list(
         props, "write_flow", obs_module_text("WriteFlow"),
         OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Natural"), 0);
-    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Boustrophedon"), 1);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.ContinuousSweep"), 0);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Diagonal"), 1);
     obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Vertical"), 2);
-    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Diagonal"), 3);
-    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.SpiralIn"), 4);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.SpiralIn"), 3);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Boustrophedon"), 4);
 
     obs_properties_add_bool(props, "reverse_write", obs_module_text("ReverseWrite"));
     obs_properties_add_float_slider(props, "lag_ratio", obs_module_text("LagRatio"), 0.02, 0.80, 0.02);
