@@ -25,12 +25,20 @@ struct manim_transition_info {
     gs_eparam_t *param_contour_mode;
     gs_eparam_t *param_contour_sensitivity;
     gs_eparam_t *param_fill_delay;
+    gs_eparam_t *param_write_flow;
+    gs_eparam_t *param_reverse_write;
+    gs_eparam_t *param_lag_ratio;
+    gs_eparam_t *param_tip_glow;
 
     // Transition parameters
     int exit_mode;
     int enter_mode;
     int contour_mode;
     int color_preset;
+    int write_flow;
+    bool reverse_write;
+    float lag_ratio;
+    float tip_glow;
     float split_t;
     float pause_t;
     struct vec4 border_color;
@@ -54,6 +62,16 @@ static void manim_update(void *data, obs_data_t *settings)
     info->enter_mode = (int)obs_data_get_int(settings, "enter_mode");
     info->contour_mode = (int)obs_data_get_int(settings, "contour_mode");
     info->color_preset = (int)obs_data_get_int(settings, "color_preset");
+    info->write_flow = (int)obs_data_get_int(settings, "write_flow");
+    info->reverse_write = obs_data_get_bool(settings, "reverse_write");
+
+    double lag = obs_data_get_double(settings, "lag_ratio");
+    if (lag <= 0.0) lag = 0.20;
+    info->lag_ratio = (float)lag;
+
+    double tglow = obs_data_get_double(settings, "tip_glow");
+    if (tglow < 0.0) tglow = 1.8;
+    info->tip_glow = (float)tglow;
 
     double split_pct = obs_data_get_double(settings, "split_ratio");
     if (split_pct <= 0.0) split_pct = 42.0;
@@ -132,6 +150,10 @@ static void *manim_create(obs_data_t *settings, obs_source_t *source)
     info->param_contour_mode = gs_effect_get_param_by_name(info->effect, "contour_mode");
     info->param_contour_sensitivity = gs_effect_get_param_by_name(info->effect, "contour_sensitivity");
     info->param_fill_delay = gs_effect_get_param_by_name(info->effect, "fill_delay");
+    info->param_write_flow = gs_effect_get_param_by_name(info->effect, "write_flow");
+    info->param_reverse_write = gs_effect_get_param_by_name(info->effect, "reverse_write");
+    info->param_lag_ratio = gs_effect_get_param_by_name(info->effect, "lag_ratio");
+    info->param_tip_glow = gs_effect_get_param_by_name(info->effect, "tip_glow");
 
     manim_update(info, settings);
     return info;
@@ -204,6 +226,10 @@ static void manim_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t
     gs_effect_set_int(info->param_contour_mode, info->contour_mode);
     gs_effect_set_float(info->param_contour_sensitivity, info->contour_sensitivity);
     gs_effect_set_float(info->param_fill_delay, info->fill_delay);
+    gs_effect_set_int(info->param_write_flow, info->write_flow);
+    gs_effect_set_bool(info->param_reverse_write, info->reverse_write);
+    gs_effect_set_float(info->param_lag_ratio, info->lag_ratio);
+    gs_effect_set_float(info->param_tip_glow, info->tip_glow);
 
     while (gs_effect_loop(info->effect, "Transition")) {
         gs_draw_sprite(NULL, 0, cx, cy);
@@ -249,6 +275,10 @@ static void manim_defaults(obs_data_t *settings)
     obs_data_set_default_double(settings, "glow_intensity", 1.6);
     obs_data_set_default_double(settings, "contour_sensitivity", 0.22);
     obs_data_set_default_double(settings, "fill_delay", 45.0);
+    obs_data_set_default_int(settings, "write_flow", 0);          // LTR Natural
+    obs_data_set_default_bool(settings, "reverse_write", false);
+    obs_data_set_default_double(settings, "lag_ratio", 0.20);     // 20% lag
+    obs_data_set_default_double(settings, "tip_glow", 1.8);       // 1.8x glow
 }
 
 static bool color_preset_changed(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
@@ -281,12 +311,27 @@ static obs_properties_t *manim_properties(void *data)
         OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
     obs_property_list_add_int(prop_exit, obs_module_text("ExitMode.FadeOut"), 0);
     obs_property_list_add_int(prop_exit, obs_module_text("ExitMode.Uncreate"), 1);
+    obs_property_list_add_int(prop_exit, obs_module_text("ExitMode.Unwrite"), 2);
 
     obs_property_t *prop_enter = obs_properties_add_list(
         props, "enter_mode", obs_module_text("EnterMode"),
         OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
     obs_property_list_add_int(prop_enter, obs_module_text("EnterMode.FadeIn"), 0);
     obs_property_list_add_int(prop_enter, obs_module_text("EnterMode.Create"), 1);
+    obs_property_list_add_int(prop_enter, obs_module_text("EnterMode.Write"), 2);
+
+    obs_property_t *prop_flow = obs_properties_add_list(
+        props, "write_flow", obs_module_text("WriteFlow"),
+        OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Natural"), 0);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Boustrophedon"), 1);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Vertical"), 2);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.Diagonal"), 3);
+    obs_property_list_add_int(prop_flow, obs_module_text("WriteFlow.SpiralIn"), 4);
+
+    obs_properties_add_bool(props, "reverse_write", obs_module_text("ReverseWrite"));
+    obs_properties_add_float_slider(props, "lag_ratio", obs_module_text("LagRatio"), 0.02, 0.80, 0.02);
+    obs_properties_add_float_slider(props, "tip_glow", obs_module_text("TipGlow"), 0.0, 4.0, 0.1);
 
     obs_property_t *prop_contour = obs_properties_add_list(
         props, "contour_mode", obs_module_text("ContourMode"),

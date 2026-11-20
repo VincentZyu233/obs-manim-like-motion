@@ -3,8 +3,8 @@ uniform texture2d tex_a;
 uniform texture2d tex_b;
 
 uniform int phase;           // 0: Exit, 1: Pause, 2: Entrance
-uniform int exit_mode;       // 0: FadeOut, 1: Uncreate
-uniform int enter_mode;      // 0: FadeIn, 1: Create
+uniform int exit_mode;       // 0: FadeOut, 1: Uncreate, 2: Unwrite
+uniform int enter_mode;      // 0: FadeIn, 1: Create, 2: Write
 uniform float progress;      // Normalized 0.0 to 1.0 for the active phase
 uniform float4 border_color; // e.g. Mizuiro Water Blue (#7FA8E8, 0.498, 0.659, 0.910, 1.0)
 uniform float border_thickness; // Thickness in UV units
@@ -14,6 +14,12 @@ uniform float2 canvas_size;     // Screen width, height
 uniform int contour_mode;          // 0: GPU XDoG, 1: Fourier Harmonic, 2: Disabled
 uniform float contour_sensitivity; // Edge threshold (0.05 to 0.50)
 uniform float fill_delay;          // Color infill delay ratio (0.10 to 0.85)
+
+// Write / Unwrite Flow Parameters (v0.3.0)
+uniform int write_flow;            // 0: LTR Natural, 1: Boustrophedon, 2: Vertical, 3: Diagonal, 4: SpiralIn
+uniform bool reverse_write;        // Invert spatio-temporal flow direction
+uniform float lag_ratio;           // Stroke to infill lag ratio (0.01 to 1.00)
+uniform float tip_glow;            // Writing tip highlight multiplier (0.0 to 4.0)
 
 sampler_state textureSampler {
     Filter    = Linear;
@@ -105,6 +111,44 @@ float get_fourier_wave(texture2d tex, float2 uv, float threshold, float p)
     return saturate(base_edge * (0.6 + 0.8 * ripple));
 }
 
+// Spatio-Temporal Flow Field S(u, v) in [0.0, 1.0] for Write / Unwrite
+float get_flow_coordinate(float2 uv, int flow_mode, float aspect)
+{
+    float s = 0.0;
+    if (flow_mode == 0) {
+        // Mode 0: LTR Natural Line-by-Line (8 rows by default)
+        float rows = 8.0;
+        float row_idx = floor(uv.y * rows);
+        float row_u = uv.x;
+        s = (row_idx + row_u) / rows;
+    } else if (flow_mode == 1) {
+        // Mode 1: Boustrophedon (Snake handwriting: alternate left-right)
+        float rows = 8.0;
+        float row_idx = floor(uv.y * rows);
+        float is_odd = fmod(row_idx, 2.0);
+        float row_u = (is_odd > 0.5) ? (1.0 - uv.x) : uv.x;
+        s = (row_idx + row_u) / rows;
+    } else if (flow_mode == 2) {
+        // Mode 2: Vertical Waterfall Code Stream (12 columns)
+        float cols = 12.0;
+        float col_idx = floor(uv.x * cols);
+        float col_v = uv.y;
+        s = (col_idx + col_v) / cols;
+    } else if (flow_mode == 3) {
+        // Mode 3: Diagonal Sweep (Top-Left to Bottom-Right)
+        s = (uv.x + uv.y) * 0.5;
+    } else {
+        // Mode 4: Spiral In (Polar Logarithmic Spiral)
+        float2 rel = (uv - 0.5) * float2(aspect, 1.0);
+        float r = length(rel);
+        float angle = atan2(rel.y, rel.x); // [-PI, PI]
+        float norm_angle = (angle + 3.14159265) / 6.2831853; // [0, 1]
+        float spiral = norm_angle + r * 2.0;
+        s = frac(spiral * 0.5);
+    }
+    return saturate(s);
+}
+
 // Exit Phase Shader (Scene A)
 float4 RenderExit(FragData f_in)
 {
@@ -129,7 +173,7 @@ float4 RenderExit(FragData f_in)
             return c * alpha + edge_glow * alpha;
         }
         return c * alpha;
-    } else {
+    } else if (exit_mode == 1) {
         // Mode 1: Uncreate (Scene deconstructs into wireframe skeleton, then rewinds)
         float dist = get_border_distance(f_in.uv, aspect);
         float s = get_perimeter_s(f_in.uv);
@@ -172,6 +216,44 @@ float4 RenderExit(FragData f_in)
             float line_vis = max(is_border, internal_edge * dissolve);
             return border_color * line_vis;
         }
+    } else {
+        // Mode 2: Unwrite (Rewind erasure along spatio-temporal flow field)
+        float s = get_flow_coordinate(f_in.uv, write_flow, aspect);
+        if (reverse_write) {
+            s = 1.0 - s;
+        }
+
+        // Erase boundary moves from 1.0 down to 0.0 as p goes from 0.0 to 1.0
+        float erase_front = 1.0 - p;
+        float lag = clamp(lag_ratio, 0.02, 0.98);
+
+        float edge = 0.0;
+        if (contour_mode == 0) {
+            edge = get_contour(tex_a, f_in.uv, contour_sensitivity);
+        } else if (contour_mode == 1) {
+            edge = get_fourier_wave(tex_a, f_in.uv, contour_sensitivity, p);
+        } else {
+            edge = 0.5;
+        }
+
+        if (s > erase_front) {
+            // Already erased
+            return float4(0.0, 0.0, 0.0, 0.0);
+        } else if (s > (erase_front - lag)) {
+            // In the active stroke erasure window: color fades to outline stroke
+            float sub_pct = (erase_front - s) / lag; // 1.0 at erase_front - lag, 0.0 at erase_front
+            float4 img = tex_a.Sample(textureSampler, f_in.uv);
+            
+            // Pen tip glow highlight
+            float tip_dist = abs(s - erase_front);
+            float tip_kernel = exp(-tip_dist * 40.0) * tip_glow;
+
+            float4 stroke_col = border_color * (edge * (1.0 + glow_intensity * 0.6) + tip_kernel);
+            return lerp(stroke_col, img, sub_pct);
+        } else {
+            // Fully intact Scene A before eraser reaches it
+            return tex_a.Sample(textureSampler, f_in.uv);
+        }
     }
 }
 
@@ -198,7 +280,7 @@ float4 RenderEntrance(FragData f_in)
             return c * p + edge_glow;
         }
         return c * p;
-    } else {
+    } else if (enter_mode == 1) {
         // Mode 1: Create (DrawBorderThenFill with Scene Contours)
         float dist = get_border_distance(f_in.uv, aspect);
         float s = get_perimeter_s(f_in.uv);
@@ -248,6 +330,45 @@ float4 RenderEntrance(FragData f_in)
 
             float4 filled_scene = img * reveal;
             return lerp(filled_scene, glowing_lines, line_retention * total_edge);
+        }
+    } else {
+        // Mode 2: Write (DrawBorderThenFill along spatio-temporal flow field)
+        float s = get_flow_coordinate(f_in.uv, write_flow, aspect);
+        if (reverse_write) {
+            s = 1.0 - s;
+        }
+
+        // Writing front moves from 0.0 to 1.0 as p goes from 0.0 to 1.0
+        float write_front = p;
+        float lag = clamp(lag_ratio, 0.02, 0.98);
+
+        float edge = 0.0;
+        if (contour_mode == 0) {
+            edge = get_contour(tex_b, f_in.uv, contour_sensitivity);
+        } else if (contour_mode == 1) {
+            edge = get_fourier_wave(tex_b, f_in.uv, contour_sensitivity, p);
+        } else {
+            edge = 0.5;
+        }
+
+        if (s > write_front) {
+            // Not yet written
+            return float4(0.0, 0.0, 0.0, 0.0);
+        } else if (s > (write_front - lag)) {
+            // Active writing stroke zone: glowing outline and pen tip sparkle
+            float sub_pct = (write_front - s) / lag; // 0.0 at write_front (just drawn), 1.0 at lag border
+            float4 img = tex_b.Sample(textureSampler, f_in.uv);
+
+            // Pen tip glow kernel
+            float tip_dist = abs(s - write_front);
+            float tip_kernel = exp(-tip_dist * 40.0) * tip_glow;
+
+            float4 stroke_col = border_color * (edge * (1.0 + glow_intensity * 0.8) + tip_kernel);
+            float infill_weight = smoothstep(0.0, 1.0, 1.0 - sub_pct); // 0 at stroke front, 1 as it fills
+            return lerp(img, stroke_col, infill_weight);
+        } else {
+            // Fully written and filled with Scene B content
+            return tex_b.Sample(textureSampler, f_in.uv);
         }
     }
 }

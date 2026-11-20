@@ -17,9 +17,11 @@ Bringing the mathematical elegance, dynamic rate functions, and geometric constr
 - **Exit Animations**:
   - `FadeOut`: Kinetic acceleration exit based on Manim's `rush_into` with subtle scale-down dynamics.
   - `Uncreate`: Geometric deconstruction—scene colors dissolve outward, revealing glowing wireframe contours that rewind/dissolve.
+  - `Unwrite` (Rewind Handwriting Erasure · v0.3.0): Erases previous scene backwards along spatio-temporal flow field with glowing stroke tips.
 - **Entrance Animations**:
   - `FadeIn`: Kinetic deceleration landing based on Manim's `rush_from` with smooth settling dynamics.
   - `Create` (`DrawBorderThenFill`): High-intensity outline drawn on canvas perimeter and internal scene elements, followed by a fluid color fill wave.
+  - `Write` (Spatio-Temporal Handwriting · v0.3.0): Replicates classic Manim mathematical derivation handwriting. Supports Natural LTR, Boustrophedon snake scan, Vertical code waterfall, Diagonal sweep, and Polar logarithmic spiral (`SpiralIn`), backed by `lag_ratio` infill delays and pen tip sparkles.
 - **Real-Time GPU Contour Extraction**:
   - Utilizes 3x3 Scharr gradient operators and Fourier harmonic wave modulation to transform any real-time screen into high-contrast chalkboard sketches in sub-millisecond shader passes.
   - 3-way mode switch: **`GPU Real-Time Sketch (XDoG)`**, **`Fourier Harmonic Waves`**, and **`Disabled (Border Only)`**.
