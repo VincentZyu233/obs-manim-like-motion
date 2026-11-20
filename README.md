@@ -55,11 +55,11 @@
 * 动态链接库：`<OBS安装目录>/obs-plugins/64bit/obs-manim-motion.dll`
 * 资源与着色器：`<OBS安装目录>/data/obs-plugins/obs-manim-motion/`
 
-#### 🐧 Linux x64 (Ubuntu / Debian / 通用发行版)
-* **Debian / Ubuntu**：直接下载 `.deb` 包执行 `sudo dpkg -i obs-manim-motion-*.deb` 即可。
-* **通用 Linux 手动放置**：下载解压包放置在用户插件目录：
-  * 共享库：`~/.config/obs-studio/plugins/obs-manim-motion/bin/64bit/obs-manim-motion.so`
-  * 资源数据：`~/.config/obs-studio/plugins/obs-manim-motion/data/`
+#### 🐧 Linux x64 (Ubuntu / Debian / Arch / Fedora 等通用发行版)
+* **Debian / Ubuntu / Mint**：下载 `.deb` 包直接执行 `sudo dpkg -i obs-manim-motion-*.deb` 即可。
+* **通用 Linux / Steam Deck (便携安装)**：下载 `obs-manim-motion-*-linux-x86_64.tar.gz` 或 `.zip`：
+  * 系统级：解压到 `/usr/local/`（包含 `lib/obs-plugins/` 与 `share/obs/obs-plugins/`）；
+  * 用户级：解压将动态库与数据放置在 `~/.config/obs-studio/plugins/obs-manim-motion/`。
 
 安装完成后启动 OBS Studio，在右下角 **转场动画** 停靠窗口点击 **`+`** 号选择 **Manim 动力学转场 (Manim Motion)** 即可配置使用！
 

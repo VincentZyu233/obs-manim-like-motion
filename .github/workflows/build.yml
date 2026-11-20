@@ -180,7 +180,7 @@ jobs:
           echo "title=${product_name} ${TAG}" >> "$GITHUB_OUTPUT"
 
           mkdir -p release_dist
-          find artifacts -type f \( -name "*.zip" -o -name "*.deb" -o -name "*.tar.gz" \) -exec cp {} release_dist/ \;
+          find artifacts -type f \( -name "*.zip" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.tar.xz" \) -exec cp {} release_dist/ \;
           ls -la release_dist/
 
       - name: Publish GitHub Release
