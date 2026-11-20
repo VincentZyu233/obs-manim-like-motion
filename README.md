@@ -52,18 +52,105 @@
 ## 🚀 下载与安装
 
 ### 获取正式发布版（GitHub Releases）
-请前往项目的 **[Releases](https://github.com/VincentZyuLive/obs-manim-like-motion/releases)** 页面下载对应系统的最新发布包：
+请前往项目的 **[Releases](https://github.com/VincentZyuLive/obs-manim-like-motion/releases)** 页面下载对应系统的最新发布包。
 
-#### 🪟 Windows x64
-下载 `obs-manim-motion-*-windows-x64.zip`，解压至你的 OBS 安装目录：
-* 动态链接库：`<OBS安装目录>/obs-plugins/64bit/obs-manim-motion.dll`
-* 资源与着色器：`<OBS安装目录>/data/obs-plugins/obs-manim-motion/`
+### 📦 Release 压缩包内部目录结构与适用场景详解
 
-#### 🐧 Linux x64 (Ubuntu / Debian / Arch / Fedora 等通用发行版)
-* **Debian / Ubuntu / Mint**：下载 `.deb` 包直接执行 `sudo dpkg -i obs-manim-motion-*.deb` 即可。
-* **通用 Linux / Steam Deck (便携安装)**：下载 `obs-manim-motion-*-linux-x86_64.tar.gz` 或 `.zip`：
-  * 系统级：解压到 `/usr/local/`（包含 `lib/obs-plugins/` 与 `share/obs/obs-plugins/`）；
-  * 用户级：解压将动态库与数据放置在 `~/.config/obs-studio/plugins/obs-manim-motion/`。
+GitHub Releases 页面每次发布均提供面向不同安装方式和操作系统的打包压缩包，各安装包内部目录结构及推荐安装路径如下：
+
+#### 1. `obs-manim-motion-<version>-windows-x64.zip`（OBS 根目录标准覆盖包）
+* **目录结构**：
+  ```text
+  obs-manim-motion-<version>-windows-x64.zip
+  ├── obs-plugins/
+  │   └── 64bit/
+  │       └── obs-manim-motion.dll
+  └── data/
+      └── obs-plugins/
+          └── obs-manim-motion/
+              ├── locale/
+              │   ├── en-US.ini
+              │   └── zh-CN.ini
+              └── effects/
+                  └── manim_transition.effect
+  ```
+* **适用场景与安装方式**：
+  * **经典 OBS 安装目录解压覆盖**（通常位于 `C:\Program Files\obs-studio\`）。
+  * 直接解压到 OBS 安装根目录即可，压缩包内顶层的 `obs-plugins/` 与 `data/` 文件夹会自动与 OBS 原生目录无缝合并。
+
+#### 2. `obs-manim-motion-<version>-windows-x64-OBS33.zip`（OBS 33+ 现代化独立插件结构包）
+* **目录结构**：
+  ```text
+  obs-manim-motion-<version>-windows-x64-OBS33.zip
+  └── plugins/
+      └── obs-manim-motion/
+          ├── bin/
+          │   └── 64bit/
+          │       └── obs-manim-motion.dll
+          └── data/
+              ├── locale/
+              │   ├── en-US.ini
+              │   └── zh-CN.ini
+              └── effects/
+                  └── manim_transition.effect
+  ```
+* **适用场景与安装方式**：
+  * **OBS Studio 33.0 及更高版本推荐的现代化独立插件目录**。OBS 33+ 引入了每个插件独立文件夹的管理机制，便于插件的统一升级与卸载。
+  * 解压至 OBS 安装根目录即可（与根目录下的 `plugins/` 目录合并）；或者解压后将内部的 `obs-manim-motion/` 单独复制到用户数据目录使用。
+
+#### 3. `obs-manim-motion-<version>-windows-x64-programdata.zip`（免管理员权限 / AppData 便携安装包）
+* **目录结构**：
+  ```text
+  obs-manim-motion-<version>-windows-x64-programdata.zip
+  └── obs-manim-motion/
+      ├── bin/
+      │   └── 64bit/
+      │       └── obs-manim-motion.dll
+      └── data/
+          ├── locale/
+          │   ├── en-US.ini
+          │   └── zh-CN.ini
+          └── effects/
+              └── manim_transition.effect
+  ```
+* **适用场景与安装方式**：
+  * **无管理员权限环境 / Steam 版 OBS / 便携版 OBS**。无需拥有 `C:\Program Files` 写入权限。
+  * 将压缩包根目录下的 `obs-manim-motion/` 文件夹整体解压至以下任一路径：
+    * **当前用户 AppData 目录（推荐）**：
+      `%APPDATA%\obs-studio\plugins\obs-manim-motion`
+      （即 `C:\Users\<用户名>\AppData\Roaming\obs-studio\plugins\obs-manim-motion`）
+    * **所有用户共享目录**：
+      `C:\ProgramData\obs-studio\plugins\obs-manim-motion`
+
+#### 4. `obs-manim-motion-<version>-x86_64-linux-gnu.deb`（Debian / Ubuntu 安装包）
+* **安装路径**：
+  * 插件二进制：`/usr/lib/x86_64-linux-gnu/obs-plugins/obs-manim-motion.so`
+  * 资源数据：`/usr/share/obs/obs-plugins/obs-manim-motion/`
+* **适用场景与安装方式**：
+  * 适用于 Ubuntu、Debian、Linux Mint、Deepin 等发行版。
+  * 终端执行：`sudo dpkg -i obs-manim-motion-*.deb` 或 `sudo apt install ./obs-manim-motion-*.deb`。
+
+#### 5. `obs-manim-motion-<version>-linux-x86_64.tar.gz` / `.zip`（通用 Linux 绿色便携包）
+* **目录结构**：
+  ```text
+  ├── lib/
+  │   └── obs-plugins/
+  │       └── obs-manim-motion.so
+  └── share/
+      └── obs/
+          └── obs-plugins/
+              └── obs-manim-motion/
+                  ├── locale/
+                  └── effects/
+  ```
+* **适用场景与安装方式**：
+  * 适用于 Arch Linux、Fedora、openSUSE、SteamOS (Steam Deck) 等通用 Linux 环境。
+  * **系统级安装**：解压至 `/usr/local/` 目录；
+  * **用户级安装**：解压后将动态库与数据放置在 `~/.config/obs-studio/plugins/obs-manim-motion/`。
+
+---
+
+### 快速上手指南
 
 安装完成后启动 OBS Studio，在右下角 **转场动画** 停靠窗口点击 **`+`** 号选择 **Manim 动力学转场 (Manim Motion)** 即可配置使用！
 
