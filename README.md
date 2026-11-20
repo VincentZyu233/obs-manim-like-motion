@@ -44,113 +44,18 @@
 
 ## 🛠️ 自动化构建与 CI/CD
 
-本项目通过 GitHub Actions 实现了全自动跨平台构建与发布流水线，采用与 `winload` 一致的提交关键字门禁机制，避免日常提交消耗计算资源。详细触发指南请参阅：
-* 📖 [构建与发布工作流说明 (.github/workflows/build.md)](.github/workflows/build.md)
+本项目通过 GitHub Actions 实现了全自动跨平台构建与发布流水线。想要了解 CI 构建流水线触发规则、工作机制，以及各 Release / CI 构建产物的完整内部目录结构，请参阅：
+* 📖 [构建与发布流水线及产物目录结构说明 (.github/workflows/build.md)](.github/workflows/build.md)
 
 ---
 
-## 🚀 下载与安装
+## 🚀 下载与快速上手
 
 ### 获取正式发布版（GitHub Releases）
 请前往项目的 **[Releases](https://github.com/VincentZyuLive/obs-manim-like-motion/releases)** 页面下载对应系统的最新发布包。
 
-### 📦 Release 压缩包内部目录结构与适用场景详解
-
-GitHub Releases 页面每次发布均提供面向不同安装方式和操作系统的打包压缩包，各安装包内部目录结构及推荐安装路径如下：
-
-#### 1. `obs-manim-motion-<version>-windows-x64.zip`（OBS 根目录标准覆盖包）
-* **目录结构**：
-  ```text
-  obs-manim-motion-<version>-windows-x64.zip
-  ├── obs-plugins/
-  │   └── 64bit/
-  │       └── obs-manim-motion.dll
-  └── data/
-      └── obs-plugins/
-          └── obs-manim-motion/
-              ├── locale/
-              │   ├── en-US.ini
-              │   └── zh-CN.ini
-              └── effects/
-                  └── manim_transition.effect
-  ```
-* **适用场景与安装方式**：
-  * **经典 OBS 安装目录解压覆盖**（通常位于 `C:\Program Files\obs-studio\`）。
-  * 直接解压到 OBS 安装根目录即可，压缩包内顶层的 `obs-plugins/` 与 `data/` 文件夹会自动与 OBS 原生目录无缝合并。
-
-#### 2. `obs-manim-motion-<version>-windows-x64-OBS33.zip`（OBS 33+ 现代化独立插件结构包）
-* **目录结构**：
-  ```text
-  obs-manim-motion-<version>-windows-x64-OBS33.zip
-  └── plugins/
-      └── obs-manim-motion/
-          ├── bin/
-          │   └── 64bit/
-          │       └── obs-manim-motion.dll
-          └── data/
-              ├── locale/
-              │   ├── en-US.ini
-              │   └── zh-CN.ini
-              └── effects/
-                  └── manim_transition.effect
-  ```
-* **适用场景与安装方式**：
-  * **OBS Studio 33.0 及更高版本推荐的现代化独立插件目录**。OBS 33+ 引入了每个插件独立文件夹的管理机制，便于插件的统一升级与卸载。
-  * 解压至 OBS 安装根目录即可（与根目录下的 `plugins/` 目录合并）；或者解压后将内部的 `obs-manim-motion/` 单独复制到用户数据目录使用。
-
-#### 3. `obs-manim-motion-<version>-windows-x64-programdata.zip`（免管理员权限 / AppData 便携安装包）
-* **目录结构**：
-  ```text
-  obs-manim-motion-<version>-windows-x64-programdata.zip
-  └── obs-manim-motion/
-      ├── bin/
-      │   └── 64bit/
-      │       └── obs-manim-motion.dll
-      └── data/
-          ├── locale/
-          │   ├── en-US.ini
-          │   └── zh-CN.ini
-          └── effects/
-              └── manim_transition.effect
-  ```
-* **适用场景与安装方式**：
-  * **无管理员权限环境 / Steam 版 OBS / 便携版 OBS**。无需拥有 `C:\Program Files` 写入权限。
-  * 将压缩包根目录下的 `obs-manim-motion/` 文件夹整体解压至以下任一路径：
-    * **当前用户 AppData 目录（推荐）**：
-      `%APPDATA%\obs-studio\plugins\obs-manim-motion`
-      （即 `C:\Users\<用户名>\AppData\Roaming\obs-studio\plugins\obs-manim-motion`）
-    * **所有用户共享目录**：
-      `C:\ProgramData\obs-studio\plugins\obs-manim-motion`
-
-#### 4. `obs-manim-motion-<version>-x86_64-linux-gnu.deb`（Debian / Ubuntu 安装包）
-* **安装路径**：
-  * 插件二进制：`/usr/lib/x86_64-linux-gnu/obs-plugins/obs-manim-motion.so`
-  * 资源数据：`/usr/share/obs/obs-plugins/obs-manim-motion/`
-* **适用场景与安装方式**：
-  * 适用于 Ubuntu、Debian、Linux Mint、Deepin 等发行版。
-  * 终端执行：`sudo dpkg -i obs-manim-motion-*.deb` 或 `sudo apt install ./obs-manim-motion-*.deb`。
-
-#### 5. `obs-manim-motion-<version>-linux-x86_64.tar.gz` / `.zip`（通用 Linux 绿色便携包）
-* **目录结构**：
-  ```text
-  ├── lib/
-  │   └── obs-plugins/
-  │       └── obs-manim-motion.so
-  └── share/
-      └── obs/
-          └── obs-plugins/
-              └── obs-manim-motion/
-                  ├── locale/
-                  └── effects/
-  ```
-* **适用场景与安装方式**：
-  * 适用于 Arch Linux、Fedora、openSUSE、SteamOS (Steam Deck) 等通用 Linux 环境。
-  * **系统级安装**：解压至 `/usr/local/` 目录；
-  * **用户级安装**：解压后将动态库与数据放置在 `~/.config/obs-studio/plugins/obs-manim-motion/`。
-
----
-
-### 快速上手指南
+> [!NOTE]
+> 想要了解各压缩包（标准安装包、OBS 33+ 模块化包、免管理员权限包、Linux deb/tar.gz）的**内部目录结构与解压目标路径**，请跳转参阅 [构建产物目录结构说明 (.github/workflows/build.md)](.github/workflows/build.md#📦-产物规格与结构说明)。
 
 安装完成后启动 OBS Studio，在右下角 **转场动画** 停靠窗口点击 **`+`** 号选择 **Manim 动力学转场 (Manim Motion)** 即可配置使用！
 

@@ -8,7 +8,7 @@
 
 本项目（`obs-manim-like-motion`）的 CI/CD 流水线采用**提交信息方括号标签驱动（Bracketed Commit Tags Gating）**与**语义化版本 Tag 驱动**相结合的机制。
 
-为了最大化节约 GitHub Actions 的计算配额与等待时间，避免每次修改 README、文档或日常零碎提交时触发长达 10~15 分钟的多平台 MSVC / GCC 深度编译，**常规提交默认在 5~9 秒内完成门禁检查并直接跳过编译**。仅在检测到特定关键字或发布标签时，才会激活全平台跨架构构建。
+为了最大化节约 GitHub Actions 的计算配额与等待时间，避免每次修改 README、文档或日常零碎提交时触发长达数分钟的多平台 MSVC / GCC 深度编译，**常规提交默认在 5~9 秒内完成门禁检查并直接跳过编译**。仅在检测到特定关键字或发布标签时，才会激活全平台跨架构构建。
 
 ---
 
@@ -19,7 +19,7 @@
 | **常规提交** (不带任何关键词) | ~5-9 秒 | ⏭️ 跳过 | ⏭️ 跳过 | ❌ | ❌ |
 | `[build]` / `[build-action]` / `[build-artifact]` | ~5 秒 | ✅ | ✅ | ✅ (Zip/Deb/DLL) | ❌ |
 | `[release]` / `[build-release]` | ~5 秒 | ✅ | ✅ | ✅ | ✅ (自动挂载发布包) |
-| **推送 Git Tag** (如 `v0.1.0`) | ~5 秒 | ✅ | ✅ | ✅ | ✅ (以 Tag 为版本发布) |
+| **推送 Git Tag** (如 `v0.3.1`) | ~5 秒 | ✅ | ✅ | ✅ | ✅ (以 Tag 为版本发布) |
 | **手动网页触发** (`workflow_dispatch`) | ~5 秒 | ✅ | ✅ | ✅ | ❌ |
 
 > [!NOTE]
@@ -35,7 +35,7 @@
 ### 1. 日常开发与文档修改（默认跳过构建）
 修改文档、注释或代码草稿时，直接正常提交，CI 会在 10 秒内绿灯通过，不消耗任何 runner 分钟数：
 ```bash
-git commit -m "docs: update v0.2.0 contour research report"
+git commit -m "docs: update v0.3.1 notes"
 git push origin main
 ```
 
@@ -55,14 +55,14 @@ git push origin main
 
 #### 方式 A：通过 Commit 消息触发
 ```bash
-git commit -m "release: v0.2.0 add watercolor stage theme and contour sketches [release]"
+git commit -m "release: v0.3.1 release packages [release]"
 git push origin main
 ```
 
 #### 方式 B：通过推送 Git Tag 触发（推荐）
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.1
+git push origin v0.3.1
 ```
 
 #### 方式 C：GitHub 网页端手动触发
@@ -74,20 +74,81 @@ git push origin v0.2.0
 
 ## 📦 产物规格与结构说明
 
-构建流水线在编译成功后，会自动打包跨平台产物：
+流水线在完成 Windows 与 Linux 构建后，会自动打包并发布多套适用不同场景的归档。各安装包内部目录结构如下：
 
-### 1. Windows x64 产物包
-* **归档名称**：`obs-manim-motion-<version>-windows-x64-<hash>.zip`
-* **包含内容**：
-  * `obs-plugins/64bit/obs-manim-motion.dll`：插件核心动态链接库。
-  * `obs-plugins/64bit/obs-manim-motion.pdb`：MSVC 调试符号文件（排查崩溃用）。
-  * `data/obs-plugins/obs-manim-motion/`：包含 `manim_transition.effect` 着色器文件与中英文语言包。
+### 1. `obs-manim-motion-<version>-windows-x64.zip`（OBS 根目录标准覆盖包）
+* **压缩包内文件树**：
+  ```text
+  obs-manim-motion-<version>-windows-x64.zip
+  ├── obs-plugins/
+  │   └── 64bit/
+  │       └── obs-manim-motion.dll
+  └── data/
+      └── obs-plugins/
+          └── obs-manim-motion/
+              ├── locale/
+              │   ├── en-US.ini
+              │   └── zh-CN.ini
+              └── effects/
+                  └── manim_transition.effect
+  ```
+* **适用场景**：经典 OBS 安装目录覆盖安装，直接解压到 OBS 根目录（通常为 `C:\Program Files\obs-studio\`）。
 
-### 2. Ubuntu Linux x86_64 产物包
-* **归档名称**：`obs-manim-motion-<version>-ubuntu-x86_64-<hash>.tar.gz` / `.deb`
-* **包含内容**：
-  * `obs-plugins/obs-manim-motion.so`：Linux 动态共享库。
-  * `data/obs-plugins/obs-manim-motion/`：资源与着色器。
+### 2. `obs-manim-motion-<version>-windows-x64-OBS33.zip`（OBS 33+ 现代化独立插件架构包）
+* **压缩包内文件树**：
+  ```text
+  obs-manim-motion-<version>-windows-x64-OBS33.zip
+  └── plugins/
+      └── obs-manim-motion/
+          ├── bin/
+          │   └── 64bit/
+          │       └── obs-manim-motion.dll
+          └── data/
+              ├── locale/
+              │   ├── en-US.ini
+              │   └── zh-CN.ini
+              └── effects/
+                  └── manim_transition.effect
+  ```
+* **适用场景**：OBS Studio 33+ 推荐的独立插件隔离目录，解压并入 OBS 根目录下的 `plugins/` 目录。
+
+### 3. `obs-manim-motion-<version>-windows-x64-programdata.zip`（免管理员权限 / AppData 便携包）
+* **压缩包内文件树**：
+  ```text
+  obs-manim-motion-<version>-windows-x64-programdata.zip
+  └── obs-manim-motion/
+      ├── bin/
+      │   └── 64bit/
+      │       └── obs-manim-motion.dll
+      └── data/
+          ├── locale/
+          │   ├── en-US.ini
+          │   └── zh-CN.ini
+          └── effects/
+              └── manim_transition.effect
+  ```
+* **适用场景**：免管理员权限/Steam 版 OBS，将内部 `obs-manim-motion/` 解压至 `%APPDATA%\obs-studio\plugins\`。
+
+### 4. `obs-manim-motion-<version>-x86_64-linux-gnu.deb`（Debian / Ubuntu 安装包）
+* **安装路径映射**：
+  * 核心库：`/usr/lib/x86_64-linux-gnu/obs-plugins/obs-manim-motion.so`
+  * 资源文件：`/usr/share/obs/obs-plugins/obs-manim-motion/`
+* **适用场景**：Ubuntu、Debian、Linux Mint、Deepin 等发行版，终端执行 `sudo dpkg -i <filename>.deb` 一键安装。
+
+### 5. `obs-manim-motion-<version>-linux-x86_64.tar.gz` / `.zip`（通用 Linux 绿色便携包）
+* **压缩包内文件树**：
+  ```text
+  ├── lib/
+  │   └── obs-plugins/
+  │       └── obs-manim-motion.so
+  └── share/
+      └── obs/
+          └── obs-plugins/
+              └── obs-manim-motion/
+                  ├── locale/
+                  └── effects/
+  ```
+* **适用场景**：Arch Linux、Fedora、openSUSE、SteamOS 等通用 Linux 环境，可解压至系统目录或用户配置目录。
 
 ---
 
@@ -95,27 +156,15 @@ git push origin v0.2.0
 
 无论是从 GitHub Actions 的 Artifacts 下载，还是从 GitHub Releases 下载，解压后的目录均与 OBS Studio 安装根目录保持结构对齐：
 
-### Windows 系统
-解压后将对应文件放入 OBS 安装目录（例如 `D:\SSoftwareFiles\obs\OBS-Studio-32.1.2-Windows-x64\`）：
-```
-<OBS安装根目录>/
-├── obs-plugins/
-│   └── 64bit/
-│       ├── obs-manim-motion.dll
-│       └── obs-manim-motion.pdb (可选)
-└── data/
-    └── obs-plugins/
-        └── obs-manim-motion/
-            ├── manim_transition.effect
-            └── locale/
-                ├── zh-CN.ini
-                └── en-US.ini
-```
+### Windows 系统部署
+根据下载的压缩包类型，选择对应路径解压部署：
+* **经典方式**：将 `obs-manim-motion-*-windows-x64.zip` 解压至 OBS 安装根目录（如 `C:\Program Files\obs-studio\`）。
+* **免权限方式**：将 `obs-manim-motion-*-programdata.zip` 解压至 `%APPDATA%\obs-studio\plugins\`。
 
-### Linux 系统
-可直接安装 `.deb` 包，或者将 `.so` 与 `data` 放置于：
-* 用户级目录：`~/.config/obs-studio/plugins/obs-manim-motion/`
-* 系统级目录：`/usr/lib/obs-plugins/` 与 `/usr/share/obs/obs-plugins/`
+### Linux 系统部署
+根据 Linux 发行版类型选择部署方式：
+* **Debian / Ubuntu**：直接执行 `sudo dpkg -i obs-manim-motion-*.deb`。
+* **通用 Linux 便携安装**：解压将 `.so` 与 `data` 放置于 `~/.config/obs-studio/plugins/obs-manim-motion/`。
 
 ---
 
