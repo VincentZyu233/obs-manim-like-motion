@@ -75,22 +75,30 @@ float get_luma(float3 rgb)
     return dot(rgb, float3(0.299, 0.587, 0.114));
 }
 
+float4 sample_scene(int use_scene_b, float2 uv)
+{
+    if (use_scene_b != 0) {
+        return tex_b.Sample(textureSampler, uv);
+    }
+    return tex_a.Sample(textureSampler, uv);
+}
+
 // Compute internal scene contours using a 3x3 Scharr gradient operator
-float get_contour(texture2d tex, float2 uv, float threshold)
+float get_contour(int use_scene_b, float2 uv, float threshold)
 {
     float2 step = 1.0 / max(canvas_size, float2(1.0, 1.0));
 
     // Sample 3x3 luminance
-    float l00 = get_luma(tex.Sample(textureSampler, uv + float2(-step.x, -step.y)).rgb);
-    float l01 = get_luma(tex.Sample(textureSampler, uv + float2(0.0, -step.y)).rgb);
-    float l02 = get_luma(tex.Sample(textureSampler, uv + float2(step.x, -step.y)).rgb);
+    float l00 = get_luma(sample_scene(use_scene_b, uv + float2(-step.x, -step.y)).rgb);
+    float l01 = get_luma(sample_scene(use_scene_b, uv + float2(0.0, -step.y)).rgb);
+    float l02 = get_luma(sample_scene(use_scene_b, uv + float2(step.x, -step.y)).rgb);
 
-    float l10 = get_luma(tex.Sample(textureSampler, uv + float2(-step.x, 0.0)).rgb);
-    float l12 = get_luma(tex.Sample(textureSampler, uv + float2(step.x, 0.0)).rgb);
+    float l10 = get_luma(sample_scene(use_scene_b, uv + float2(-step.x, 0.0)).rgb);
+    float l12 = get_luma(sample_scene(use_scene_b, uv + float2(step.x, 0.0)).rgb);
 
-    float l20 = get_luma(tex.Sample(textureSampler, uv + float2(-step.x, step.y)).rgb);
-    float l21 = get_luma(tex.Sample(textureSampler, uv + float2(0.0, step.y)).rgb);
-    float l22 = get_luma(tex.Sample(textureSampler, uv + float2(step.x, step.y)).rgb);
+    float l20 = get_luma(sample_scene(use_scene_b, uv + float2(-step.x, step.y)).rgb);
+    float l21 = get_luma(sample_scene(use_scene_b, uv + float2(0.0, step.y)).rgb);
+    float l22 = get_luma(sample_scene(use_scene_b, uv + float2(step.x, step.y)).rgb);
 
     // Scharr gradient filter
     float gx = (-3.0 * l00 + 3.0 * l02 - 10.0 * l10 + 10.0 * l12 - 3.0 * l20 + 3.0 * l22) / 32.0;
@@ -102,9 +110,9 @@ float get_contour(texture2d tex, float2 uv, float threshold)
 }
 
 // Fourier Harmonic Wave outline
-float get_fourier_wave(texture2d tex, float2 uv, float threshold, float p)
+float get_fourier_wave(int use_scene_b, float2 uv, float threshold, float p)
 {
-    float base_edge = get_contour(tex, uv, threshold);
+    float base_edge = get_contour(use_scene_b, uv, threshold);
     float freq = 36.0;
     float wave = sin(uv.x * freq + p * 6.28318) * cos(uv.y * freq - p * 6.28318);
     float ripple = saturate(0.5 + 0.5 * wave);
@@ -164,8 +172,8 @@ float4 RenderExit(FragData f_in)
 
         if (contour_mode < 2) {
             float edge = (contour_mode == 0) 
-                ? get_contour(tex_a, f_in.uv, contour_sensitivity) 
-                : get_fourier_wave(tex_a, f_in.uv, contour_sensitivity, p);
+                ? get_contour(0, f_in.uv, contour_sensitivity)
+                : get_fourier_wave(0, f_in.uv, contour_sensitivity, p);
             float4 edge_glow = border_color * edge * p * 1.2;
             return c * alpha + edge_glow * alpha;
         }
@@ -179,9 +187,9 @@ float4 RenderExit(FragData f_in)
 
         float internal_edge = 0.0;
         if (contour_mode == 0) {
-            internal_edge = get_contour(tex_a, f_in.uv, contour_sensitivity);
+            internal_edge = get_contour(0, f_in.uv, contour_sensitivity);
         } else if (contour_mode == 1) {
-            internal_edge = get_fourier_wave(tex_a, f_in.uv, contour_sensitivity, p);
+            internal_edge = get_fourier_wave(0, f_in.uv, contour_sensitivity, p);
         }
 
         if (p < fd) {
@@ -231,9 +239,9 @@ float4 RenderExit(FragData f_in)
 
         float edge = 0.0;
         if (contour_mode == 0) {
-            edge = get_contour(tex_a, f_in.uv, contour_sensitivity);
+            edge = get_contour(0, f_in.uv, contour_sensitivity);
         } else if (contour_mode == 1) {
-            edge = get_fourier_wave(tex_a, f_in.uv, contour_sensitivity, p);
+            edge = get_fourier_wave(0, f_in.uv, contour_sensitivity, p);
         } else {
             edge = 0.5;
         }
@@ -275,8 +283,8 @@ float4 RenderEntrance(FragData f_in)
         
         if (contour_mode < 2) {
             float edge = (contour_mode == 0) 
-                ? get_contour(tex_b, f_in.uv, contour_sensitivity) 
-                : get_fourier_wave(tex_b, f_in.uv, contour_sensitivity, p);
+                ? get_contour(1, f_in.uv, contour_sensitivity)
+                : get_fourier_wave(1, f_in.uv, contour_sensitivity, p);
             float4 edge_glow = border_color * edge * (1.0 - p) * 1.5;
             return c * p + edge_glow;
         }
@@ -290,9 +298,9 @@ float4 RenderEntrance(FragData f_in)
 
         float internal_edge = 0.0;
         if (contour_mode == 0) {
-            internal_edge = get_contour(tex_b, f_in.uv, contour_sensitivity);
+            internal_edge = get_contour(1, f_in.uv, contour_sensitivity);
         } else if (contour_mode == 1) {
-            internal_edge = get_fourier_wave(tex_b, f_in.uv, contour_sensitivity, p);
+            internal_edge = get_fourier_wave(1, f_in.uv, contour_sensitivity, p);
         }
 
         if (p < fd) {
@@ -350,9 +358,9 @@ float4 RenderEntrance(FragData f_in)
 
         float edge = 0.0;
         if (contour_mode == 0) {
-            edge = get_contour(tex_b, f_in.uv, contour_sensitivity);
+            edge = get_contour(1, f_in.uv, contour_sensitivity);
         } else if (contour_mode == 1) {
-            edge = get_fourier_wave(tex_b, f_in.uv, contour_sensitivity, p);
+            edge = get_fourier_wave(1, f_in.uv, contour_sensitivity, p);
         } else {
             edge = 0.5;
         }

@@ -116,9 +116,9 @@ static void *manim_create(obs_data_t *settings, obs_source_t *source)
     struct manim_transition_info *info = (struct manim_transition_info *)bzalloc(sizeof(struct manim_transition_info));
     info->source = source;
 
-    char *effect_path = obs_module_file("manim_transition.effect");
+    char *effect_path = obs_module_file("effects/manim_transition.effect");
     if (!effect_path) {
-        effect_path = obs_module_file("effects/manim_transition.effect");
+        effect_path = obs_module_file("manim_transition.effect");
     }
     if (!effect_path) {
         blog(LOG_ERROR, "[obs-manim-motion] manim_transition.effect not found in module directory");
